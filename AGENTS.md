@@ -1,5 +1,9 @@
 # 项目上下文
 
+### 项目概览
+
+**百年健康** — 一个健康科普网站，详细介绍脑中风预防、高血压防治、养生长寿之道，帮助用户轻松阔过百年。
+
 ### 版本技术栈
 
 - **Framework**: Next.js 16 (App Router)
@@ -19,7 +23,18 @@
 │   └── start.sh            # 生产环境启动脚本
 ├── src/
 │   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
+│   │   ├── layout.tsx      # 根布局 (中文 lang, 健康主题 metadata)
+│   │   ├── page.tsx        # 首页 (组装各内容模块)
+│   │   └── globals.css     # 全局样式 (绿色健康主题色)
+│   ├── components/         # 业务组件
+│   │   ├── health-nav.tsx      # 粘性导航栏 (客户端组件, 滚动高亮)
+│   │   ├── health-hero.tsx     # Hero 首屏 (山水背景, 数据统计)
+│   │   ├── health-stroke.tsx   # 脑中风预防板块 (FAST原则, 危险因素, 预防策略)
+│   │   ├── health-hypertension.tsx  # 高血压防治板块 (血压分级, DASH饮食, 运动指南, 时刻表)
+│   │   ├── health-longevity.tsx    # 养生长寿板块 (中医智慧, 四季饮食, 长寿习惯)
+│   │   ├── health-century.tsx      # 百年之道板块 (蓝区启示, 六大法则, 管理清单)
+│   │   ├── health-footer.tsx       # 页脚
+│   │   └── ui/              # Shadcn UI 组件库
 │   ├── hooks/              # 自定义 Hooks
 │   ├── lib/                # 工具库
 │   │   └── utils.ts        # 通用工具函数 (cn)
@@ -29,37 +44,55 @@
 └── tsconfig.json           # TypeScript 配置
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 构建与测试命令
+
+```bash
+pnpm install          # 安装依赖
+pnpm dev              # 启动开发环境 (端口5000)
+pnpm build            # 构建生产版本
+pnpm start            # 启动生产环境
+pnpm ts-check         # TypeScript 类型检查
+pnpm lint:build       # ESLint 代码检查
+pnpm validate         # 并行执行 ts-check + lint:build
+```
+
+## 页面结构
+
+单页滚动式网站，包含以下板块：
+
+1. **导航栏** — 粘性顶部导航，滚动时高亮当前板块
+2. **Hero 首屏** — 山水背景图 + 核心数据统计
+3. **认识中风** — 中风类型 / FAST预警 / 危险因素 / 预防策略
+4. **防治高血压** — 血压分级 / DASH饮食 / 运动指南 / 一日时刻表
+5. **养生长寿** — 中医四大法则 / 四季饮食 / 六大长寿习惯
+6. **百年之道** — 蓝区启示 / 六大健康法则 / 健康管理清单
+7. **页脚** — 免责声明与快速导航
 
 ## 包管理规范
 
 **仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
 
 ## 开发规范
 
 ### 编码规范
 
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
+- 默认按 TypeScript `strict` 心智写代码
+- 禁止隐式 `any` 和 `as any`
+- 仅交互组件使用 `'use client'`，内容展示组件保持服务端组件
 
 ### next.config 配置规范
 
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
+- 配置的路径不要写死绝对路径，必须使用动态拼接
 
 ### Hydration 问题防范
 
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
+1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据
+2. 必须使用 `'use client'` + useEffect + useState 确保动态内容仅在客户端挂载后渲染
+3. 禁止使用 head 标签，优先使用 metadata
 
-## UI 设计与组件规范 (UI & Styling Standards)
+## UI 设计与组件规范
 
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+- 使用 shadcn/ui 组件库，位于 `src/components/ui/` 目录下
+- 主题色为绿色系（emerald/teal），体现健康与生命力
+- 卡片组件统一使用 `border-0 shadow-md` 风格
+- 响应式设计：移动端优先，断点 sm/md/lg
